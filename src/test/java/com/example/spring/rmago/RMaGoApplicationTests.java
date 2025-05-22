@@ -1,10 +1,10 @@
-package com.example.spring.joorung;
+package com.example.spring.rmago;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class JooRungApplicationTests {
+class RMaGoApplicationTests {
 
 	@Test
 	void contextLoads() {
