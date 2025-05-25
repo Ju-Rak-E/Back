@@ -5,8 +5,9 @@ package com.example.spring.rmago.config;
 //전체 Spring Security설정 담당
 //CSRF,CORS,세션,필터,경로 허용 등 전반적인 보안 설정
 
+
 import com.example.spring.rmago.security.OAuth2LoginSuccessHandler;
-import com.example.spring.rmago.service.CustomOAuth2UserService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +24,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    private final CustomOAuth2UserService customOAuth2UserService;
+    private final CustomerService customerService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -36,7 +37,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customerService))
                         .successHandler(oAuth2LoginSuccessHandler)
                 );
 
