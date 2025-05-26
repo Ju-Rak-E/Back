@@ -4,6 +4,7 @@ package com.example.spring.rmago.security;
 //작성일 : 2025-05-24
 //소셜 로그인 성공후 JWT 발급 및 쿠키 저장
 
+import com.example.spring.rmago.service.CustomerService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,8 +25,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
 
-        CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
-        String email = oAuth2User.getEmail();
+        CustomerPrincipal customerPrincipal = (CustomerPrincipal) authentication.getPrincipal();
+        String email = customerPrincipal.getEmail();
 
         String accessToken = jwtUtil.generateAccessToken(email);
         String refreshToken = jwtUtil.generateRefreshToken(email);

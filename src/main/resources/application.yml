@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/rmago
     username: postgres
-    password: 1234
+    password: 0629
 
   jpa:
     hibernate:

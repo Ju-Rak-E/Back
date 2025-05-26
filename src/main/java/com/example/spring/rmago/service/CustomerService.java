@@ -6,6 +6,7 @@ package com.example.spring.rmago.service;
 
 import com.example.spring.rmago.entity.Customer;
 import com.example.spring.rmago.repository.UserRepository;
+import com.example.spring.rmago.security.CustomerPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -17,7 +18,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+public class CustomerService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
 
@@ -29,8 +30,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         Map<String, Object> kakaoAccount = oAuth2User.getAttribute("kakao_account");
         String email = (String) kakaoAccount.get("email");
         String nickname = (String) kakaoAccount.get("nickname");
-        String kakaoId = (String) kakaoAccount.get("kakao_id");
-
+        String kakaoId = oAuth2User.getAttribute("id").toString();
 
         // DB에서 사용자 찾기 또는 새로 저장
         Customer customer = userRepository.findByEmail(email)
@@ -42,9 +42,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     // 필요한 필드들 추가 설정
                     return userRepository.save(newCustomer);
                 });
-
-// 커스텀 OAuth2User 반환
-//        return new CustomOAuth2User(customer, oAuth2User.getAttributes());
+    return new CustomerPrincipal(customer, oAuth2User.getAttributes());
 
     }
 }

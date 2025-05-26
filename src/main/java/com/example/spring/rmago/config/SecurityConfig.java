@@ -8,6 +8,7 @@ package com.example.spring.rmago.config;
 
 import com.example.spring.rmago.security.OAuth2LoginSuccessHandler;
 
+import com.example.spring.rmago.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
