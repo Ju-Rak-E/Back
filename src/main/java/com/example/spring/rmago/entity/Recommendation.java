@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
 
 @Entity
 @Filter(name = "deletedFilter")
@@ -12,24 +11,17 @@ import org.hibernate.annotations.FilterDef;
 @Setter
 public class Recommendation extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "search_log_id")
+    @JoinColumn(name = "search_log_id", nullable = false)
     private SearchLog searchLog;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "place_id")
+    @JoinColumn(name = "place_id", nullable = false)
     private Place place;
 
+    @Column(name = "distance", precision = 10, scale = 6)
     private Double distance;
 
     @Column(name = "estimated_fare")
     private Integer estimatedFare;
-
-    @Column(name = "delete_flag")
-    private String deleteFlag = "N";
 }
-
