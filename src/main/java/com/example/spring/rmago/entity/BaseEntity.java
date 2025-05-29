@@ -1,9 +1,8 @@
 package com.example.spring.rmago.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import lombok.Getter;
+import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.FilterDef;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -13,25 +12,33 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-@FilterDef(name = "deletedFilter", defaultCondition = "delete_flag = 'N'")
 @MappedSuperclass
+@FilterDef(name = "deletedFilter", defaultCondition = "delete_flag = 'N'")
+@Filter(name = "deletedFilter")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 public abstract class BaseEntity {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "delete_flag")
+    private String deleteFlag;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
-    protected LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column(name = "modified_at")
-    protected LocalDateTime modifiedAt;
+    private LocalDateTime modifiedAt;
 
     @CreatedBy
     @Column(name = "created_by", updatable = false)
-    protected String createdBy;
+    private String createdBy;
 
     @LastModifiedBy
     @Column(name = "modified_by")
-    protected String modifiedBy;
+    private String modifiedBy;
 }

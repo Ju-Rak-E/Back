@@ -10,22 +10,25 @@ import org.hibernate.annotations.Filter;
 @Getter
 @Setter
 public class Place extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
+    @Column(name = "name", length = 100)
     private String name;
+
+    @Column(name = "category", length = 50)
     private String category;
 
-    @Column(name = "place_image_url")
+    @Column(name = "place_image_url", length = 255)
     private String placeImageUrl;
 
+    @Column(name = "lat", precision = 10, scale = 6)
     private Double lat;
+
+    @Column(name = "lng", precision = 10, scale = 6)
     private Double lng;
 
-    @Column(name = "delete_flag")
-    private String deleteFlag = "N";
-
+    @Column(name = "address", length = 255)
     private String address;
+
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 }
