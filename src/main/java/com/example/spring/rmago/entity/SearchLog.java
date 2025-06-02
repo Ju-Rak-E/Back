@@ -19,10 +19,10 @@ public class SearchLog extends BaseEntity {
     @Column(name = "input_amount")
     private Integer inputAmount;
 
-    @Column(name = "search_lat", precision = 10, scale = 6)
+    @Column(name = "search_lat")
     private Double searchLat;
 
-    @Column(name = "search_lng", precision = 10, scale = 6)
+    @Column(name = "search_lng")
     private Double searchLng;
 
     @Column(name = "result_count")
