@@ -70,6 +70,7 @@ public class CustomerService extends DefaultOAuth2UserService {
         String email = (String) ((Map<String, Object>) userInfo.get("kakao_account")).get("email");
         String nickname = (String) ((Map<String, Object>) userInfo.get("properties")).get("nickname");
 
+
         // 사용자 정보 DB 저장
         Customer customer = userRepository.findByEmail(email)
                 .orElseGet(() -> {
@@ -89,6 +90,9 @@ public class CustomerService extends DefaultOAuth2UserService {
         TokenResponseDto dto = new TokenResponseDto();
         dto.setAccessToken(access);
         dto.setRefreshToken(refresh);
+
+        System.out.println("*** JWT발급 완료: access=" + access + ", refresh=" + refresh);
+
         return dto;
     }
 
@@ -149,6 +153,9 @@ public class CustomerService extends DefaultOAuth2UserService {
                     entity,
                     Map.class
             );
+
+            System.out.println("👉 Kakao API 호출 accessToken: " + accessToken);
+            System.out.println("👉 Kakao 응답: " + response.getBody());
 
             return response.getBody();
         } catch (Exception e) {

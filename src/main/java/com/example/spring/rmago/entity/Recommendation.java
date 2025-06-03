@@ -19,7 +19,7 @@ public class Recommendation extends BaseEntity {
     @JoinColumn(name = "place_id", nullable = false)
     private Place place;
 
-    @Column(name = "distance", precision = 10, scale = 6)
+    @Column(name = "distance")
     private Double distance;
 
     @Column(name = "estimated_fare")

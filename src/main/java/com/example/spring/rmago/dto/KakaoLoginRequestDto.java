@@ -11,6 +11,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class KakaoLoginRequestDto {
+public class KakaoLoginRequestDto{
     private String accessToken;
 }

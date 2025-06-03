@@ -20,10 +20,10 @@ public class Place extends BaseEntity {
     @Column(name = "place_image_url", length = 255)
     private String placeImageUrl;
 
-    @Column(name = "lat", precision = 10, scale = 6)
+    @Column(name = "lat")
     private Double lat;
 
-    @Column(name = "lng", precision = 10, scale = 6)
+    @Column(name = "lng")
     private Double lng;
 
     @Column(name = "address", length = 255)

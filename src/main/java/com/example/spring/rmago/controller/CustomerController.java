@@ -27,6 +27,14 @@ public class CustomerController implements CustomerControllerDocs {
     // ✅ Flutter에서 Kakao accessToken을 받아 로그인 처리 (access + refresh 발급)
     @PostMapping("/login/kakao")
     public ResponseEntity<TokenResponseDto> kakaologin(@RequestBody KakaoLoginRequestDto requestDto) {
+
+        System.out.println("받은 accessToken:"+ requestDto.getAccessToken());
+
+        if (requestDto.getAccessToken() == null || requestDto.getAccessToken().isEmpty()) {
+            System.out.println("토큰을 못받았거나 빈문자열 입니다.");
+            return ResponseEntity.badRequest().build();
+        }
+
         TokenResponseDto responseDto = customerService.kakaoLogin(requestDto.getAccessToken());
         return ResponseEntity.ok(responseDto);
     }

@@ -23,12 +23,12 @@ public class JwtProvider {
 
     private final JwtProperties jwtProperties;
 
-    // ✅ SecretKey 객체로 변환
+    // SecretKey 객체로 변환
     private SecretKey getKey() {
         return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
-    // ✅ AccessToken 발급
+    // AccessToken 발급
     public String generateToken(String subject) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtProperties.getExpirationMs());
@@ -41,7 +41,7 @@ public class JwtProvider {
                 .compact();
     }
 
-    // ✅ RefreshToken 발급
+    // RefreshToken 발급
     public String generateRefreshToken(String subject) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtProperties.getExpirationMs() * 7);
@@ -54,7 +54,7 @@ public class JwtProvider {
                 .compact();
     }
 
-    // ✅ 유효성 검증
+    // 유효성 검증
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -67,7 +67,7 @@ public class JwtProvider {
         }
     }
 
-    // ✅ subject(email) 추출
+    //  subject(email) 추출
     public String getEmailFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getKey())
