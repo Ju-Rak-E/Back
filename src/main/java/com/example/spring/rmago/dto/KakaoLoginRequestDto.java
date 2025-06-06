@@ -6,12 +6,14 @@ package com.example.spring.rmago.dto;
 //카카오에서의 accessToken을 Flutter를 통해 받은 값
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class KakaoLoginRequestDto{
+
     private String accessToken;
     private String userId;
     private String email;

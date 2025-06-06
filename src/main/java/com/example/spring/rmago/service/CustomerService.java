@@ -45,40 +45,50 @@ public class CustomerService {
      * 안드로이드에서 accessToken을 직접 받아 사용자 정보 조회 후 JWT 발급
      */
     public TokenResponseDto kakaoLoginForAndroid(String accessToken) {
-        Map<String, Object> userInfo = getKakaoUserInfo(accessToken);
+            try {
+                Map<String, Object> userInfo = getKakaoUserInfo(accessToken);
 
-        String email = (String) ((Map<String, Object>) userInfo.get("kakao_account")).get("email");
-        String nickname = (String) ((Map<String, Object>) userInfo.get("properties")).get("nickname");
+                System.out.println("👉 userInfo: " + userInfo); // 전체 JSON 확인
 
-        // 사용자 정보 저장
-        Customer customer = userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    Customer newCustomer = new Customer();
-                    newCustomer.setEmail(email);
-                    newCustomer.setNickname(nickname);
-                    newCustomer.setKakaoId(userInfo.get("id").toString());
-                    // 추가적인 유효성 검사를 할 수 있다면 여기서 처리
-                    if (newCustomer.getEmail() == null || newCustomer.getEmail().isEmpty()) {
-                        throw new RuntimeException("유효하지 않은 이메일");
-                    }
-                    return userRepository.save(newCustomer);
-                });
+                String email = (String) ((Map<String, Object>) userInfo.get("kakao_account")).get("email");
+                String nickname = (String) ((Map<String, Object>) userInfo.get("properties")).get("nickname");
 
-        // JWT 발급 (유효기간 1시간, refreshToken은 7일)
-        String access = jwtProvider.generateToken(email, 60 * 60); // 1시간
-        String refresh = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7); // 7일
+                if (email == null || email.isEmpty()) {
+                    throw new RuntimeException("❌ 이메일이 없습니다. 카카오 설정에서 이메일 제공 동의가 되어 있는지 확인하세요.");
+                }
 
-        // 응답 DTO 구성
-        TokenResponseDto dto = new TokenResponseDto();
-        dto.setAccessToken(access);
-        dto.setRefreshToken(refresh);
+                Customer customer = userRepository.findByEmail(email)
+                        .orElseGet(() -> {
+                            Customer newCustomer = new Customer();
+                            newCustomer.setEmail(email);
+                            newCustomer.setNickname(nickname);
+                            newCustomer.setKakaoId(userInfo.get("id").toString());
+                            return userRepository.save(newCustomer);
+                        });
 
-        return dto;
-    }
+                // JWT 발급
+                String access = jwtProvider.generateToken(email, 60 * 60);
+                String refresh = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7);
 
-    /**
-     * 웹에서 authorizationCode로 accessToken을 발급받고 JWT 발급
-     */
+                System.out.println("✅ JWT access 발급: " + access);
+                System.out.println("✅ JWT refresh 발급: " + refresh);
+
+                TokenResponseDto dto = new TokenResponseDto();
+                dto.setAccessToken(access);
+                dto.setRefreshToken(refresh);
+
+                return dto;
+
+            } catch (Exception e) {
+                System.out.println("❌ 예외 발생: " + e.getMessage());
+                throw new RuntimeException("카카오 로그인 처리 중 예외 발생: " + e.getMessage());
+            }
+        }
+
+
+        /**
+         * 웹에서 authorizationCode로 accessToken을 발급받고 JWT 발급
+         */
     public TokenResponseDto kakaoLoginForWeb(String authorizationCode, String redirectUri) {
         // 카카오 OAuth2 인증 코드로 access token 발급
         String accessToken = getAccessTokenFromAuthorizationCode(authorizationCode, redirectUri);
