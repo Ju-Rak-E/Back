@@ -13,4 +13,7 @@ import lombok.Setter;
 @Setter
 public class KakaoLoginRequestDto{
     private String accessToken;
+    private String userId;
+    private String email;
+    private String nickname;
 }

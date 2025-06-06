@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class HealthCheckController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
-        return ResponseEntity.ok("OK");
+
+        System.out.println("Health Check***********!!");
+        return ResponseEntity.ok("백엔드에서 보낸다 연결되었다고");
     }
 }

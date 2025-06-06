@@ -1,8 +1,8 @@
 package com.example.spring.rmago.security;
 
-//최초 작성자 : 김병훈
-//작성일 : 2025-05-24
-//소셜 로그인 성공후 JWT 발급 및 쿠키 저장
+// 최초 작성자 : 김병훈
+// 작성일 : 2025-05-24
+// 소셜 로그인 성공후 JWT 발급 및 쿠키 저장
 
 import com.example.spring.rmago.properties.JwtProperties;
 import com.example.spring.rmago.service.CustomerService;
@@ -32,9 +32,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         CustomerPrincipal customerPrincipal = (CustomerPrincipal) authentication.getPrincipal();
         String email = customerPrincipal.getEmail();
 
-        // ✅ 토큰 발급
-        String accessToken = jwtProvider.generateToken(email);
-        String refreshToken = jwtProvider.generateRefreshToken(email);
+        // ✅ 토큰 발급 (유효 기간 설정: 1시간, refreshToken은 7일)
+        String accessToken = jwtProvider.generateToken(email, 60 * 60);  // 1시간
+        String refreshToken = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7);  // 7일
 
         // ✅ RefreshToken Redis에 저장
         redisService.saveRefreshToken(email, refreshToken, jwtProperties.getExpirationMs() * 7);
@@ -49,7 +49,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60);
+        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60); // 7일
         refreshTokenCookie.setSecure(false);
 
         response.addCookie(accessTokenCookie);
@@ -58,5 +58,4 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         // ✅ Flutter 앱 딥링크 리다이렉트
         response.sendRedirect("yourapp://login-success");
     }
-
 }

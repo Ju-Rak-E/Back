@@ -1,20 +1,12 @@
-//최초 작성자 : 김병훈
-//작성일 : 2025-05-24
-//전체 Spring Security설정 담당
-//CSRF,CORS,세션,필터,경로 허용 등 전반적인 보안 설정
-
 package com.example.spring.rmago.config;
 
 import com.example.spring.rmago.security.JwtAuthenticationFilter;
-import com.example.spring.rmago.security.OAuth2LoginSuccessHandler;
 import com.example.spring.rmago.service.CustomerService;
 import com.example.spring.rmago.properties.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -25,12 +17,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    private final CustomerService customerService;
     private final JwtProperties jwtProperties;
 
     @Bean
@@ -39,26 +28,28 @@ public class SecurityConfig {
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 🔥 CORS 명시적 설정
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 설정
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login/**", "/oauth2/**", "/customer/login/kakao", "/customer/reissue").permitAll()
+                        // Swagger UI 및 API 문서 경로에 대해서는 인증 없이 허용
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        //헬스 체크도 인증 없이 접근
+                        .requestMatchers("/health").permitAll()
+                        // 카카오 로그인 관련 경로는 허용 (카카오 로그인 페이지 및 관련 API)
+                        .requestMatchers("/login/**", "/oauth2/**", "/customer/login/kakao/android").permitAll()
+                        // 다른 모든 경로는 인증이 필요함
                         .anyRequest().authenticated()
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customerService))
-                        .successHandler(oAuth2LoginSuccessHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // ✅ CORS 설정 명시적 등록 (모든 요청 허용 - 개발용)
+    // CORS 설정 (개발 환경에서는 모든 요청 허용)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*")); // 프론트 도메인 넣을 수도 있음
+        config.setAllowedOrigins(List.of("http://192.168.219.113:8080", "http://localhost:8080"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // 쿠키 포함 허용
