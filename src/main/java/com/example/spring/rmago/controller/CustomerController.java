@@ -20,7 +20,7 @@ public class CustomerController {
     @PostMapping("/login/kakao/android")
     public ResponseEntity<TokenResponseDto> kakaologinForAndroid(@RequestBody KakaoLoginRequestDto requestDto) {
 
-        System.out.println("카카오 로그인 요청받음.");
+        System.out.println("카카오 로그인 요청받음.컨트롤러에서");
         System.out.println("받은 accessToken: " + requestDto.getAccessToken());
 
         if (requestDto.getAccessToken() == null || requestDto.getAccessToken().isEmpty()) {

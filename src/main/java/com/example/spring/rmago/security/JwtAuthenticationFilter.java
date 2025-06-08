@@ -3,6 +3,7 @@ package com.example.spring.rmago.security;
 import com.example.spring.rmago.properties.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -14,6 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProperties jwtProperties;
@@ -23,12 +25,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        return path.equals("/customer/login/kakao/android")
+                || path.equals("/customer/login/kakao/reissue");
+    }
+
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
         // HTTP 헤더에서 "Authorization" 키로 JWT를 가져옴
         String token = request.getHeader("Authorization");
-        System.out.println("JWT filter Authorization 키:" + token);
+//        System.out.println("JWT filter Authorization 키:" + token);
+        log.info("JWT filter Authorization 키:" + token);
 
         if (token != null && token.startsWith("Bearer ")) {
             try {
