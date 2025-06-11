@@ -29,7 +29,6 @@ public class CustomerService {
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
     private final RestTemplate restTemplate;
-    private final RedisService redisService;
     private final JwtProperties jwtProperties;
 
     // 카카오 앱 키를 @Value를 사용하여 가져옵니다.
@@ -164,22 +163,11 @@ public class CustomerService {
             throw new RuntimeException("유효하지 않은 RefreshToken");
         }
 
-        // Redis에서 기존 refreshToken 조회
-        String saved = redisService.getRefreshToken(email);
-        if (saved == null || !saved.equals(refreshToken)) {
-            throw new RuntimeException("RefreshToken이 일치하지 않음");
-        }
 
         // 새 토큰 생성 (유효기간 1시간, refreshToken은 7일)
         String newAccess = jwtProvider.generateToken(email, 60 * 60); // 1시간
         String newRefresh = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7); // 7일
 
-        // 새 refreshToken을 Redis에 갱신
-        try {
-            redisService.saveRefreshToken(email, newRefresh, jwtProperties.getExpirationMs() * 7);
-        } catch (Exception e) {
-            throw new RuntimeException("Redis 저장 오류: " + e.getMessage());
-        }
 
         // 응답 DTO 구성
         TokenResponseDto dto = new TokenResponseDto();
