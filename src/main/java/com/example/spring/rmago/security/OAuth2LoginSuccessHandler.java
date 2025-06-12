@@ -5,8 +5,6 @@ package com.example.spring.rmago.security;
 // 소셜 로그인 성공후 JWT 발급 및 쿠키 저장
 
 import com.example.spring.rmago.properties.JwtProperties;
-import com.example.spring.rmago.service.CustomerService;
-import com.example.spring.rmago.service.RedisService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,7 +21,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     private final JwtProvider jwtProvider;
     private final JwtProperties jwtProperties;
-    private final RedisService redisService;
+
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -36,8 +34,6 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String accessToken = jwtProvider.generateToken(email, 60 * 60);  // 1시간
         String refreshToken = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7);  // 7일
 
-        // ✅ RefreshToken Redis에 저장
-        redisService.saveRefreshToken(email, refreshToken, jwtProperties.getExpirationMs() * 7);
 
         // ✅ 쿠키 생성 (보안옵션은 운영환경 여부에 따라 설정)
         Cookie accessTokenCookie = new Cookie("access_token", accessToken);
