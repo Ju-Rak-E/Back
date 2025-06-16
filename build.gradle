@@ -61,6 +61,8 @@ dependencies {
 
 	//Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	//xlsx읽기
+	implementation 'org.apache.poi:poi-ooxml:5.2.3'
 
 	// 테스트
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
