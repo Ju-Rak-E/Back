@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CustomerController {
 
-
     private final CustomerService customerService;
 
     // ✅ Flutter에서 Kakao accessToken을 받아 로그인 처리
@@ -53,14 +52,25 @@ public class CustomerController {
     // ✅ RefreshToken을 받아 access/refresh 재발급 요청 처리
     @PostMapping("/reissue")
     public ResponseEntity<TokenResponseDto> reissue(@RequestBody TokenReissueRequestDto requestDto) {
-        log.info("(컨트롤러) refreshToken 재발급 요청 수신: {} " + requestDto.getRefreshToken());
 
-        TokenResponseDto newToken = customerService.reissue(requestDto.getRefreshToken());
+        String refreshToken = requestDto.getRefreshToken(); // 요청 본문에서 리프레시 토큰을 받음
 
-        //발급된 jwt 토큰 출력
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            // 리프레시 토큰이 없으면 400 Bad Request 응답
+            return ResponseEntity.badRequest().body(new TokenResponseDto("리프레시 토큰이 없습니다", null, null));
+        }
+
+        log.info("(컨트롤러) refreshToken 재발급 요청 수신: {} ", refreshToken);
+
+        // 리프레시 토큰으로 새로운 액세스 토큰과 리프레시 토큰 발급
+        TokenResponseDto newToken = customerService.reissue(refreshToken);
+
+        // 발급된 토큰 정보 로그 출력
         log.info("재발급된 accessToken: " + newToken.getAccessToken());
         log.info("재발급된 refreshToken: " + newToken.getRefreshToken());
 
+        // 새로 발급된 토큰을 응답
         return ResponseEntity.ok(newToken);
     }
+
 }
