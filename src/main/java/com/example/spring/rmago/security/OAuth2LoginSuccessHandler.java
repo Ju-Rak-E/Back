@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -30,28 +31,31 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         CustomerPrincipal customerPrincipal = (CustomerPrincipal) authentication.getPrincipal();
         String email = customerPrincipal.getEmail();
 
-        // ✅ 토큰 발급 (유효 기간 설정: 1시간, refreshToken은 7일)
-        String accessToken = jwtProvider.generateToken(email, 60 * 60);  // 1시간
-        String refreshToken = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7);  // 7일
+        // ✅ 역할 정보 (현재 하나뿐이므로 고정)
+        List<String> roles = List.of("ROLE_USER");
 
+        // ✅ 토큰 발급
+        String accessToken = jwtProvider.generateAccessToken(email, roles, 60 * 60);        // 1시간
+        String refreshToken = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7);    // 7일
 
-        // ✅ 쿠키 생성 (보안옵션은 운영환경 여부에 따라 설정)
+        // ✅ 쿠키 생성
         Cookie accessTokenCookie = new Cookie("access_token", accessToken);
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setPath("/");
-        accessTokenCookie.setMaxAge(15 * 60); // 15분
-        accessTokenCookie.setSecure(false);   // 로컬 개발은 false
+        accessTokenCookie.setMaxAge(60 * 60); // 1시간
+        accessTokenCookie.setSecure(false);   // 개발 중은 false
 
         Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60); // 7일
+        refreshTokenCookie.setMaxAge(60 * 60 * 24 * 7); // 7일
         refreshTokenCookie.setSecure(false);
 
         response.addCookie(accessTokenCookie);
         response.addCookie(refreshTokenCookie);
 
-        // ✅ Flutter 앱 딥링크 리다이렉트
+        // ✅ Flutter 앱 딥링크로 리다이렉트
         response.sendRedirect("yourapp://login-success");
     }
+
 }

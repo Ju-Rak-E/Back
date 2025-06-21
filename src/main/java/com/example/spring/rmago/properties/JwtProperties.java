@@ -6,22 +6,15 @@ package com.example.spring.rmago.properties;
 
 
 import lombok.Data;
+import lombok.Getter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Data
 @Component
+@Getter
 @ConfigurationProperties(prefix = "jwt")
 public class JwtProperties{
-
     private String secret;
     private long expirationMs;
-
-    public String getSecret() {
-        return secret;
-    }
-
-    public long getExpirationMs() {
-        return expirationMs;
-    }
 }
