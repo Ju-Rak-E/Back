@@ -9,6 +9,7 @@ import com.example.spring.rmago.entity.Customer;
 import com.example.spring.rmago.properties.JwtProperties;
 import com.example.spring.rmago.repository.UserRepository;
 import com.example.spring.rmago.security.JwtProvider;
+import com.example.spring.rmago.security.TokenStatus;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -29,7 +31,6 @@ public class CustomerService {
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
     private final RestTemplate restTemplate;
-    private final JwtProperties jwtProperties;
 
     // 카카오 앱 키를 @Value를 사용하여 가져옵니다.
     @Value("${KAKAO_CLIENT_ID}")
@@ -66,7 +67,7 @@ public class CustomerService {
                         });
 
                 // JWT 발급
-                String access = jwtProvider.generateToken(email, 60 * 60);
+                String access = jwtProvider.generateAccessToken(email, List.of("ROLE_USER"), 60 * 60);
                 String refresh = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7);
 
                 System.out.println("✅ JWT access 발급: " + access);
@@ -83,7 +84,6 @@ public class CustomerService {
                 throw new RuntimeException("카카오 로그인 처리 중 예외 발생: " + e.getMessage());
             }
         }
-
 
         /**
          * 웹에서 authorizationCode로 accessToken을 발급받고 JWT 발급
@@ -149,34 +149,33 @@ public class CustomerService {
      * RefreshToken을 받아 access/refresh 재발급 요청 처리
      */
     public TokenResponseDto reissue(String refreshToken) {
-        System.out.println("전달받은 토큰(커스텀 서비스):" + refreshToken);
+        // 1. 토큰 유효성 검사
+        TokenStatus status = jwtProvider.validateToken(refreshToken);
 
         String email;
 
-        try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(jwtProperties.getSecret().getBytes())
-                    .build()
-                    .parseClaimsJws(refreshToken)
-                    .getBody();
-
-            email = claims.getSubject();
-        } catch (Exception e) {
-            System.out.println("❌ RefreshToken 파싱 실패! 전달된 토큰: " + refreshToken);
-            System.out.println("❌ 예외 메시지: " + e.getMessage());
-            throw new RuntimeException("유효하지 않은 RefreshToken");
+        // 2. 토큰 상태에 따른 분기 처리
+        switch (status) {
+            case VALID -> {
+                email = jwtProvider.getEmailFromToken(refreshToken);
+            }
+            case EXPIRED -> {
+                email = jwtProvider.getEmailFromExpiredToken(refreshToken); // 서명은 검증됨
+                if (email == null) {
+                    throw new RuntimeException("만료된 토큰에서 사용자 정보를 가져올 수 없습니다.");
+                }
+            }
+            case INVALID -> {
+                throw new RuntimeException("비정상적인 리프레시 토큰입니다. 다시 로그인해주세요.");
+            }
+            default -> throw new RuntimeException("알 수 없는 토큰 상태입니다.");
         }
 
-        // 새 토큰 생성
-        String newAccess = jwtProvider.generateToken(email, 60 * 60);
-        String newRefresh = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7);
+        // 3. 새 토큰 발급 (1시간, 7일)
+        String newAccessToken = jwtProvider.generateAccessToken(email, List.of("ROLE_USER"), 60 * 60);
+        String newRefreshToken = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7);
 
-        System.out.println("✅ 재발급된 AccessToken: " + newAccess);
-        System.out.println("✅ 재발급된 RefreshToken: " + newRefresh);
-
-        TokenResponseDto dto = new TokenResponseDto();
-        dto.setAccessToken(newAccess);
-        dto.setRefreshToken(newRefresh);
-        return dto;
+        // 4. 응답 DTO 생성
+        return new TokenResponseDto("새로 발급한 토큰", newAccessToken, newRefreshToken);
     }
 }

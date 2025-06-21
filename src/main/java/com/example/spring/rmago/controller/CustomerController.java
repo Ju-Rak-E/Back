@@ -61,11 +61,11 @@ public class CustomerController {
         }
 
         try {
-            log.info("(컨트롤러) refreshToken 재발급 요청 수신: {} ", refreshToken);
+            log.info("(컨트롤러) RefreshToken 재발급 요청 수신: {}", refreshToken);
             TokenResponseDto newToken = customerService.reissue(refreshToken);
             return ResponseEntity.ok(newToken);
-        } catch (Exception e) {
-            return ResponseEntity.status(403).body(new TokenResponseDto("리프레시 토큰이 유효하지 않습니다", null, null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(new TokenResponseDto(e.getMessage(), null, null));
         }
     }
 
