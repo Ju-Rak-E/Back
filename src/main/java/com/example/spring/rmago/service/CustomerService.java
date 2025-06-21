@@ -149,6 +149,8 @@ public class CustomerService {
      * RefreshToken을 받아 access/refresh 재발급 요청 처리
      */
     public TokenResponseDto reissue(String refreshToken) {
+        System.out.println("전달받은 토큰(커스텀 서비스):" + refreshToken);
+
         String email;
 
         try {
@@ -160,16 +162,18 @@ public class CustomerService {
 
             email = claims.getSubject();
         } catch (Exception e) {
+            System.out.println("❌ RefreshToken 파싱 실패! 전달된 토큰: " + refreshToken);
+            System.out.println("❌ 예외 메시지: " + e.getMessage());
             throw new RuntimeException("유효하지 않은 RefreshToken");
         }
 
+        // 새 토큰 생성
+        String newAccess = jwtProvider.generateToken(email, 60 * 60);
+        String newRefresh = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7);
 
-        // 새 토큰 생성 (유효기간 1시간, refreshToken은 7일)
-        String newAccess = jwtProvider.generateToken(email, 60 * 60); // 1시간
-        String newRefresh = jwtProvider.generateRefreshToken(email, 60 * 60 * 24 * 7); // 7일
+        System.out.println("✅ 재발급된 AccessToken: " + newAccess);
+        System.out.println("✅ 재발급된 RefreshToken: " + newRefresh);
 
-
-        // 응답 DTO 구성
         TokenResponseDto dto = new TokenResponseDto();
         dto.setAccessToken(newAccess);
         dto.setRefreshToken(newRefresh);

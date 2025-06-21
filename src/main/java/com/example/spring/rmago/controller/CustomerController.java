@@ -9,12 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping( "/customer")
 @RequiredArgsConstructor
 public class CustomerController {
-
 
     private final CustomerService customerService;
 
@@ -52,15 +53,20 @@ public class CustomerController {
 
     // ✅ RefreshToken을 받아 access/refresh 재발급 요청 처리
     @PostMapping("/reissue")
-    public ResponseEntity<TokenResponseDto> reissue(@RequestBody TokenReissueRequestDto requestDto) {
-        log.info("(컨트롤러) refreshToken 재발급 요청 수신: {} " + requestDto.getRefreshToken());
+    public ResponseEntity<TokenResponseDto> reissue(@RequestBody Map<String, String> requestBody) {
+        String refreshToken = requestBody.get("refreshToken");
 
-        TokenResponseDto newToken = customerService.reissue(requestDto.getRefreshToken());
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return ResponseEntity.badRequest().body(new TokenResponseDto("리프레시 토큰이 없습니다", null, null));
+        }
 
-        //발급된 jwt 토큰 출력
-        log.info("재발급된 accessToken: " + newToken.getAccessToken());
-        log.info("재발급된 refreshToken: " + newToken.getRefreshToken());
-
-        return ResponseEntity.ok(newToken);
+        try {
+            log.info("(컨트롤러) refreshToken 재발급 요청 수신: {} ", refreshToken);
+            TokenResponseDto newToken = customerService.reissue(refreshToken);
+            return ResponseEntity.ok(newToken);
+        } catch (Exception e) {
+            return ResponseEntity.status(403).body(new TokenResponseDto("리프레시 토큰이 유효하지 않습니다", null, null));
+        }
     }
+
 }
