@@ -1,11 +1,14 @@
 package com.example.spring.rmago.controller;
 
+import com.example.spring.rmago.dto.RadiusAreaRequestDto;
 import com.example.spring.rmago.dto.PlaceDto;
 import com.example.spring.rmago.service.PlaceService;
 import com.example.spring.rmago.swagger.PlaceControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 한국관광공사에서 제공하는 OpenAPI를 호출하여
@@ -56,7 +59,23 @@ public class PlaceController implements PlaceControllerDocs {
             @RequestParam String baseYm,
             @RequestParam String keyword
     ) {
-        // 키워드 기반 검색 결과 반환
         return ResponseEntity.ok(placeService.fetchTourByKeyword(baseYm, keyword));
+    }
+    /**
+     * [POST] /api/tour/multiple-areas
+     *
+     * 여러 시군구 코드 리스트를 기반으로 관광지 데이터를 조회합니다.
+     * 요청 본문에는 baseYm과 sigunguCdList가 포함됩니다.
+     */
+    // ✅ [POST] 반경 내 관광지 목록 조회
+    @PostMapping("/within-radius")
+    public ResponseEntity<List<PlaceDto>> getTourListWithinRadius(@RequestBody RadiusAreaRequestDto request) {
+        List<PlaceDto> result = placeService.fetchTourListWithinRadius(
+                request.getBaseYm(),
+                request.getLatitude(),
+                request.getLongitude(),
+                request.getRadius()
+        );
+        return ResponseEntity.ok(result);
     }
 }
