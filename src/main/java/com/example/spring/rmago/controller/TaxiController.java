@@ -46,6 +46,15 @@ public class TaxiController implements TaxiControllerDocs {
         }
 
         log.info("📦 포함된 시군구 코드 수: {}", sigunguCodes.size());
-        return ResponseEntity.ok(new RadiusResponseDto(radius, sigunguCodes));
+
+        return ResponseEntity.ok(
+                new RadiusResponseDto(
+                        request.getLatitude(),
+                        request.getLongitude(),
+                        radius,
+                        sigunguCodes
+                )
+        );
     }
+
 }

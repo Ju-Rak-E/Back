@@ -10,6 +10,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RadiusResponseDto {
+    private double latitude;
+    private double longitude;
     private double radius;
     private List<String> sigunguCodes;
 }
