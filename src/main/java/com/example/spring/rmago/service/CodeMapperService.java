@@ -1,4 +1,4 @@
-package com.example.spring.rmago.util;
+package com.example.spring.rmago.service;
 
 
 //최초 작성자: 김병훈

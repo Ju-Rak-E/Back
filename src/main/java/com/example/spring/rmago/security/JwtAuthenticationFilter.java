@@ -41,6 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return excludePaths.stream().anyMatch(path::startsWith);
     }
 
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -80,6 +81,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 sendErrorResponse(response, "Unauthorized", HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
+        }else{
+            log.warn("!!! Authorization 헤더가 없거나 Bearer 토큰 아님: {}", token);
         }
 
         // 필터 체인 계속 진행

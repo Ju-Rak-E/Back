@@ -48,3 +48,8 @@ tourapi:
 
 kakao:
   rest-api-key: ${KAKAO_RESTAPI_KEY}
+
+naver:
+  map:
+   client-id: ${NAVER_MAP_CLIENT_ID}
+   secret-key: ${NAVER_MAP_SECRET_KEY}

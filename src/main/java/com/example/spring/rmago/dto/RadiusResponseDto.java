@@ -4,9 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class RadiusResponseDto {
-    private double radiusInMeters;
+    private double latitude;
+    private double longitude;
+    private double radius;
+    private List<String> sigunguCodes;
 }

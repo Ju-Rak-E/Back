@@ -34,6 +34,7 @@ public class PlaceDto {
         private String title;
         private String addr1;
         private String contentid;
-        private String firstimage; // 이미지 URL
+        private String mapx; // 경도
+        private String mapy; // 위도
     }
 }
