@@ -49,7 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // HTTP 헤더에서 "Authorization" 키로 JWT를 가져옴
         String token = request.getHeader("Authorization");
 //        System.out.println("JWT filter Authorization 키:" + token);
-        log.info("JWT filter Authorization 키:" + token);
+//        log.info("JWT filter Authorization 키:" + token);
 
         if (token != null && token.startsWith("Bearer ")) {
             try {

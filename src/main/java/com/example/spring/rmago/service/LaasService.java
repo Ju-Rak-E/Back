@@ -19,7 +19,7 @@ public class LaasService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final String apiKey = "YOUR_LAAS_API_KEY";         // 발급받은 키
+    private final String apiKey = "LAAS_API_KEY";         // 발급받은 키
     private final String projectId = "YOUR_PROJECT_ID";         // 라스 프로젝트 ID
     private final String hash = "YOUR_PRESET_HASH";             // 프리셋 해시
 
@@ -32,18 +32,18 @@ public class LaasService {
             Map<String, Object> params = new HashMap<>();
             params.put("latitude", req.getLatitude());
             params.put("longitude", req.getLongitude());
-            params.put("radiusKm", req.getRadiusKm());
+            params.put("radiusKm", req.getRadius());
             params.put("category", req.getCategory());
 
             // place 리스트를 LaaS에 넘기기 위한 요약 정보 추가
             List<Map<String, Object>> placeList = new ArrayList<>();
             for (Place place : places) {
                 Map<String, Object> p = new HashMap<>();
-                p.put("title", place.getTitle());
-                p.put("mapx", place.getMapX());
-                p.put("mapy", place.getMapY());
+                p.put("name", place.getName());
+                p.put("lat", place.getLat());
+                p.put("lng", place.getLng());
                 p.put("address", place.getAddress());
-                p.put("category", place.getContentTypeId());
+                p.put("category", place.getCategory());
                 placeList.add(p);
             }
             params.put("places", placeList);
