@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +23,7 @@ public class PlaceService {
     private final String encodedServiceKey;
 
     public PlaceService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, @Value("${tourapi.service-key}") String serviceKey) {
-        this.webClient = webClientBuilder.baseUrl("https://apis.data.go.kr").build();
+        this.webClient = webClientBuilder.build();
         this.objectMapper = objectMapper;
         this.encodedServiceKey = serviceKey;
     }
@@ -30,29 +32,40 @@ public class PlaceService {
      * 위치 기반 관광지 조회 API 호출
      */
     public Mono<PlaceDto> fetchLocationBasedTourList(double latitude, double longitude, int radius, int contentTypeId) {
+        final int radiusToUse;
         if (radius <= 0) {
             log.warn("⚠ 반경이 0 이하입니다. 기본값 1000m로 대체합니다.");
-            radius = 1000;
+            radiusToUse = 1000;
+        } else {
+            radiusToUse = radius;
         }
 
-        String path = "/B551011/KorService2/locationBasedList2";
+        // URL 문자열을 직접 만들고, WebClient가 인코딩하지 못하게 URI 객체로 변환
         String finalUrl = String.format(
-                "%s?serviceKey=%s&MobileOS=AND&MobileApp=Rmago&mapX=%f&mapY=%f&radius=%d&contentTypeId=%d&numOfRows=10&_type=json",
-                path, this.encodedServiceKey, longitude, latitude, radius, contentTypeId
+                "https://apis.data.go.kr/B551011/KorService2/locationBasedList2?serviceKey=%s&MobileOS=AND&MobileApp=Rmago&mapX=%f&mapY=%f&radius=%d&contentTypeId=%d&numOfRows=10&_type=json",
+                this.encodedServiceKey, longitude, latitude, radiusToUse, contentTypeId
         );
 
-        log.info("📡 [API 요청] 최종 URL: https://apis.data.go.kr{}", finalUrl);
+        log.info("📡 [API 요청] 최종 URL: {}", finalUrl);
+
+        URI uri;
+        try {
+            uri = new URI(finalUrl);
+        } catch (URISyntaxException e) {
+            log.error("❌ 잘못된 URI 문법입니다: {}", finalUrl, e);
+            return Mono.error(e);
+        }
 
         return webClient.get()
-                .uri(finalUrl)
+                .uri(uri)
                 .retrieve()
                 .bodyToMono(String.class)
+                .doOnNext(responseBody -> log.info("📡 [API 응답] 수신: {}", responseBody.substring(0, Math.min(responseBody.length(), 200))))
                 .flatMap(responseBody -> {
                     if (responseBody.startsWith("<")) {
                         log.error("❌ API 서버가 XML 에러를 반환했습니다:\n{}", responseBody);
                         return Mono.error(new RuntimeException("API Server returned an XML error. Check Service Key and request parameters."));
                     }
-
                     try {
                         PlaceDto placeDto = objectMapper.readValue(responseBody, PlaceDto.class);
                         log.info("✅ 응답 파싱 성공.");
@@ -96,8 +109,6 @@ public class PlaceService {
                         place.setLng(item.getMapx());
                         place.setLat(item.getMapy());
                         place.setCategory(category);
-
-                        // log.info("✅ 장소 등록: [{}] {} ({}, {})", category, place.getName(), place.getLat(), place.getLng());
                         result.add(place);
                     }
                     return result;
