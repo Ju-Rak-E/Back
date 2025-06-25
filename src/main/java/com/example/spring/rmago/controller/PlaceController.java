@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tour")
 @RequiredArgsConstructor
-@Slf4j // <- 로그 어노테이션 추가
+@Slf4j
 public class PlaceController {
 
     private final PlaceService placeService;
@@ -34,8 +35,17 @@ public class PlaceController {
         int radiusMeters = (int) (request.getRadius() * 1000); // km → m 변환
         String category = request.getCategory();
 
-        List<Place> places = placeService.getPlacesByCoordinate(lat, lng, radiusMeters, category);
+        // Mono<List<Place>>를 block()으로 동기 처리
+        List<Place> places = placeService
+                .getPlacesByCoordinate(lat, lng, radiusMeters, category)
+                .block();
 
+        // 혹시 null이 반환될 경우를 대비
+        if (places == null) {
+            places = Collections.emptyList();
+        }
+
+        log.info("🎯 반환할 장소 개수: {}", places.size());
         return ResponseEntity.ok(places);
     }
 
