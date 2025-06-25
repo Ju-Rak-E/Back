@@ -1,157 +1,131 @@
 package com.example.spring.rmago.service;
 
 import com.example.spring.rmago.dto.PlaceDto;
+import com.example.spring.rmago.entity.Place;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriUtils;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PlaceService {
 
-    @Value("${tourapi.service-key}")
-    private String serviceKey;
-
-    @Value("${naver.map.client-id}")
-    private String naverClientId;
-
-    @Value("${naver.map.secret-key}")
-    private String naverSecretKey;
-
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final String encodedServiceKey;
 
-    // ============================ Public APIs ============================
-
-    public String getSigunguCodeFromNaver(double lat, double lng) {
-        return querySigunguCode(lat, lng)
-                .orElseThrow(() -> new RuntimeException("시군구 코드 조회 실패"));
+    public PlaceService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, @Value("${tourapi.service-key}") String serviceKey) {
+        this.webClient = webClientBuilder.baseUrl("https://apis.data.go.kr").build();
+        this.objectMapper = objectMapper;
+        this.encodedServiceKey = serviceKey;
     }
 
-    public List<String> getSigunguCodesWithinRadius(double centerLat, double centerLng, double radiusMeters) {
-        final int sampleCount = 60;
-        final double earthRadius = 6371000.0;
-        Set<String> result = new HashSet<>();
-
-        for (int i = 0; i < sampleCount; i++) {
-            double angle = 2 * Math.PI * i / sampleCount;
-            double dx = radiusMeters * Math.cos(angle);
-            double dy = radiusMeters * Math.sin(angle);
-
-            double sampledLat = centerLat + (dy / earthRadius) * (180 / Math.PI);
-            double sampledLng = centerLng + (dx / (earthRadius * Math.cos(Math.toRadians(centerLat)))) * (180 / Math.PI);
-
-            querySigunguCode(sampledLat, sampledLng).ifPresent(result::add);
+    /**
+     * 위치 기반 관광지 조회 API 호출
+     */
+    public Mono<PlaceDto> fetchLocationBasedTourList(double latitude, double longitude, int radius, int contentTypeId) {
+        if (radius <= 0) {
+            log.warn("⚠ 반경이 0 이하입니다. 기본값 1000m로 대체합니다.");
+            radius = 1000;
         }
 
-        log.info("📍 반경 내 시군구 코드 수: {}, 목록: {}", result.size(), result);
-        return new ArrayList<>(result);
+        String path = "/B551011/KorService2/locationBasedList2";
+        String finalUrl = String.format(
+                "%s?serviceKey=%s&MobileOS=AND&MobileApp=Rmago&mapX=%f&mapY=%f&radius=%d&contentTypeId=%d&numOfRows=10&_type=json",
+                path, this.encodedServiceKey, longitude, latitude, radius, contentTypeId
+        );
+
+        log.info("📡 [API 요청] 최종 URL: https://apis.data.go.kr{}", finalUrl);
+
+        return webClient.get()
+                .uri(finalUrl)
+                .retrieve()
+                .bodyToMono(String.class)
+                .flatMap(responseBody -> {
+                    if (responseBody.startsWith("<")) {
+                        log.error("❌ API 서버가 XML 에러를 반환했습니다:\n{}", responseBody);
+                        return Mono.error(new RuntimeException("API Server returned an XML error. Check Service Key and request parameters."));
+                    }
+
+                    try {
+                        PlaceDto placeDto = objectMapper.readValue(responseBody, PlaceDto.class);
+                        log.info("✅ 응답 파싱 성공.");
+                        return Mono.just(placeDto);
+                    } catch (Exception e) {
+                        log.error("❌ JSON 응답 파싱 실패: {}", e.getMessage(), e);
+                        return Mono.error(e);
+                    }
+                });
     }
 
-    public PlaceDto fetchAreaBasedTourList(String baseYm, String areaCd, String sigunguCd) {
-        String url = UriComponentsBuilder.fromHttpUrl("https://apis.data.go.kr/B551011/TarRlteTarService1/areaBasedList1")
-                .queryParam("serviceKey", UriUtils.encode(serviceKey, StandardCharsets.UTF_8))
-                .queryParam("pageNo", 1)
-                .queryParam("numOfRows", 10)
-                .queryParam("MobileOS", "AND")
-                .queryParam("MobileApp", "Rmago")
-                .queryParam("baseYm", baseYm)
-                .queryParam("areaCd", areaCd)
-                .queryParam("signguCd", sigunguCd)
-                .queryParam("_type", "json")
-                .build().toUriString();
 
-        return parsePlaceDtoFromUrl(url, areaCd, sigunguCd);
+    /**
+     * 위도/경도, 반경, 카테고리로 장소 리스트 조회
+     */
+    public Mono<List<Place>> getPlacesByCoordinate(double latitude, double longitude, int radiusMeters, String category) {
+        int contentTypeId = resolveContentTypeId(category);
+
+        return fetchLocationBasedTourList(latitude, longitude, radiusMeters, contentTypeId)
+                .map(dto -> {
+                    List<Place> result = new ArrayList<>();
+                    if (dto == null || dto.getResponse() == null || dto.getResponse().getBody() == null || dto.getResponse().getBody().getItems() == null) {
+                        log.warn("❌ 응답 데이터의 Items 또는 상위 구조가 null입니다.");
+                        return result;
+                    }
+
+                    List<PlaceDto.ItemDto> items = dto.getResponse().getBody().getItems().getItem();
+                    if (items == null) {
+                        log.info("📍 API 응답에 해당하는 장소가 없습니다.");
+                        return result;
+                    }
+
+                    log.info("📍 좌표 기반 검색 결과 수: {}", items.size());
+
+                    for (PlaceDto.ItemDto item : items) {
+                        if (item.getMapx() == null || item.getMapy() == null) continue;
+
+                        Place place = new Place();
+                        place.setName(item.getTitle());
+                        place.setAddress(item.getAddr1());
+                        place.setLng(item.getMapx());
+                        place.setLat(item.getMapy());
+                        place.setCategory(category);
+
+                        // log.info("✅ 장소 등록: [{}] {} ({}, {})", category, place.getName(), place.getLat(), place.getLng());
+                        result.add(place);
+                    }
+                    return result;
+                });
     }
 
-    public PlaceDto fetchTourByKeyword(String baseYm, String keyword) {
-        String url = UriComponentsBuilder.fromHttpUrl("https://apis.data.go.kr/B551011/TarRlteTarService1/searchKeyword1")
-                .queryParam("serviceKey", UriUtils.encode(serviceKey, StandardCharsets.UTF_8))
-                .queryParam("pageNo", 1)
-                .queryParam("numOfRows", 10)
-                .queryParam("MobileOS", "ETC")
-                .queryParam("MobileApp", "Rmago")
-                .queryParam("baseYm", baseYm)
-                .queryParam("keyword", UriUtils.encode(keyword, StandardCharsets.UTF_8))
-                .queryParam("_type", "json")
-                .build().toUriString();
+    /**
+     * 카테고리 문자열 → contentTypeId 변환
+     */
+    public int resolveContentTypeId(String category) {
+        if (category == null || category.isBlank()) {
+            log.warn("⚠ category가 null 또는 비어있음 → 기본값 '관광지(12)' 사용");
+            return 12;
+        }
 
-        return parsePlaceDtoFromUrl(url, null, null);
-    }
-
-    public List<PlaceDto> fetchTourListWithinRadius(String baseYm, double lat, double lng, double radius) {
-        log.info("📡 반경 관광지 요청: baseYm={}, lat={}, lng={}, radius={}m", baseYm, lat, lng, radius);
-        List<String> sigunguCdList = getSigunguCodesWithinRadius(lat, lng, radius);
-
-        log.info("✅ 포함된 시군구 코드 리스트: {}", sigunguCdList);
-        List<PlaceDto> results = new ArrayList<>();
-
-        for (String sigunguCd : sigunguCdList) {
-            if (sigunguCd.length() < 5) continue;
-            String areaCd = sigunguCd.substring(0, 2);
-
-            try {
-                PlaceDto dto = fetchAreaBasedTourList(baseYm, areaCd, sigunguCd);
-                results.add(dto);
-                log.debug("✅ 관광지 조회 성공 - sigunguCd={}, 지역 개수={}",
-                        sigunguCd, dto.getResponse().getBody().getItems().getItem().size());
-            } catch (Exception e) {
-                log.warn("❌ 관광지 조회 실패 - sigunguCd={}, 이유: {}", sigunguCd, e.getMessage());
+        return switch (category.toLowerCase()) {
+            case "관광지" -> 12;
+            case "문화시설" -> 14;
+            case "축제공연행사" -> 15;
+            case "여행코스" -> 25;
+            case "레포츠" -> 28;
+            case "숙박" -> 32;
+            case "쇼핑" -> 38;
+            case "음식점" -> 39;
+            default -> {
+                log.warn("⚠ 알 수 없는 category '{}', 기본값 '관광지(12)' 사용", category);
+                yield 12;
             }
-        }
-
-        log.info("📦 전체 관광지 응답 수: {}", results.size());
-        return results;
-    }
-
-    // ============================ Private Utils ============================
-
-    private Optional<String> querySigunguCode(double lat, double lng) {
-        try {
-            String url = UriComponentsBuilder.fromHttpUrl("https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc")
-                    .queryParam("coords", lng + "," + lat)
-                    .queryParam("output", "json")
-                    .queryParam("orders", "admcode")
-                    .build().toUriString();
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-NCP-APIGW-API-KEY-ID", naverClientId);
-            headers.set("X-NCP-APIGW-API-KEY", naverSecretKey);
-
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
-
-            if (response.getStatusCode().is2xxSuccessful()) {
-                List<Map<String, Object>> results = (List<Map<String, Object>>) response.getBody().get("results");
-                if (results != null && !results.isEmpty()) {
-                    Map<String, Object> code = (Map<String, Object>) results.get(0).get("code");
-                    return Optional.ofNullable(((String) code.get("id"))).map(s -> s.substring(0, 5));
-                }
-            }
-        } catch (Exception e) {
-            log.warn("⚠️ 시군구 코드 조회 실패 (lat={}, lng={}): {}", lat, lng, e.getMessage());
-        }
-        return Optional.empty();
-    }
-
-    private PlaceDto parsePlaceDtoFromUrl(String url, String areaCd, String sigunguCd) {
-        String json = restTemplate.getForObject(url, String.class);
-        try {
-            return objectMapper.readValue(json, PlaceDto.class);
-        } catch (Exception e) {
-            log.error("❌ 관광공사 응답 파싱 실패 - areaCd={}, sigunguCd={}, 에러={}",
-                    areaCd, sigunguCd, e.getMessage());
-            throw new RuntimeException("관광공사 응답 파싱 실패", e);
-        }
+        };
     }
 }
