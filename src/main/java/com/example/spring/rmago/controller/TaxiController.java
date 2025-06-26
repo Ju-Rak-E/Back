@@ -29,6 +29,7 @@ public class TaxiController implements TaxiControllerDocs {
                         request.getLatitude(),
                         request.getLongitude(),
                         radius,
+                        request.getCategory(),
                         null  // 시군구 코드 리스트 제거됨
                 )
         );

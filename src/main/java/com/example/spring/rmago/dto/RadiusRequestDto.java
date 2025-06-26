@@ -11,5 +11,6 @@ public class RadiusRequestDto {
     private double latitude;
     private double longitude;
     private RadiusMode mode; // SINGLE 또는 MULTI
+    private String category;
 
 }

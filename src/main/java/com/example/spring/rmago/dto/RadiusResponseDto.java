@@ -13,5 +13,6 @@ public class RadiusResponseDto {
     private double latitude;
     private double longitude;
     private double radius;
+    private String category;
     private List<String> sigunguCodes;
 }

@@ -127,8 +127,8 @@ public class PlaceService {
         return switch (category.toLowerCase()) {
             case "관광지" -> 12;
             case "문화시설" -> 14;
-            case "축제공연행사" -> 15;
-            case "여행코스" -> 25;
+            case "행사" -> 15;
+            case "여행" -> 25;
             case "레포츠" -> 28;
             case "숙박" -> 32;
             case "쇼핑" -> 38;
