@@ -29,15 +29,34 @@ public class PlaceController {
 
     private final PlaceService placeService;
 
+//    @GetMapping("/area")
+//    public ResponseEntity<List<RecommendedPlaceDto>> getNearbyTourSpots(@RequestBody RecommendRequestDto request) {
+//        double lat = request.getLatitude();
+//        double lng = request.getLongitude();
+//        int radiusMeters = (int) (request.getRadius() * 1000); // km → m 변환
+//        String category = request.getCategory();
+//
+//        List<RecommendedPlaceDto> response = placeService
+//                .getRecommendedPlaces(lat, lng, radiusMeters, category)
+//                .block();
+//
+//        if (response == null) response = Collections.emptyList();
+//
+//        log.info("🎯 반환할 장소 개수: {}", response.size());
+//        return ResponseEntity.ok(response);
+//    }
+
     @GetMapping("/area")
-    public ResponseEntity<List<RecommendedPlaceDto>> getNearbyTourSpots(@RequestBody RecommendRequestDto request) {
-        double lat = request.getLatitude();
-        double lng = request.getLongitude();
-        int radiusMeters = (int) (request.getRadius() * 1000); // km → m 변환
-        String category = request.getCategory();
+    public ResponseEntity<List<RecommendedPlaceDto>> getNearbyTourSpots(
+            @RequestParam double latitude,
+            @RequestParam double longitude,
+            @RequestParam double radius, // 단위: km
+            @RequestParam(required = false) String category) {
+
+        int radiusMeters = (int) (radius * 1000); // km → m 변환
 
         List<RecommendedPlaceDto> response = placeService
-                .getRecommendedPlaces(lat, lng, radiusMeters, category)
+                .getRecommendedPlaces(latitude, longitude, radiusMeters, category)
                 .block();
 
         if (response == null) response = Collections.emptyList();
@@ -45,7 +64,6 @@ public class PlaceController {
         log.info("🎯 반환할 장소 개수: {}", response.size());
         return ResponseEntity.ok(response);
     }
-
 
 
 }
