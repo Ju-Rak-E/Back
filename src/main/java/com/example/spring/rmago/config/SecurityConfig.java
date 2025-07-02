@@ -1,6 +1,5 @@
 package com.example.spring.rmago.config;
 
-import com.example.spring.rmago.security.JwtAuthenticationFilter;
 import com.example.spring.rmago.properties.JwtProperties;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -25,7 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtProperties jwtProperties;
+  private final JwtProperties jwtProperties;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -50,9 +49,9 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    
     }
-
-    // CORS 설정 (개발 환경에서는 모든 요청 허용)
+  
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -60,36 +59,33 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(true); // 쿠키 포함 허용
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
 
-
-    // Swagger UI에 JWT 인증 기능을 추가하는 설정
     @Bean
     public OpenAPI customOpenAPI() {
-        final String securitySchemeName = "bearerAuth"; // 스키마 이름 정의 (Swagger UI에서 표시될 이름)
+        final String securitySchemeName = "bearerAuth";
 
         return new OpenAPI()
-                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName)) // 모든 API에 이 보안 요구사항 적용
                 .components(
                         new Components()
                                 .addSecuritySchemes(securitySchemeName,
                                         new SecurityScheme()
                                                 .name(securitySchemeName)
-                                                .type(SecurityScheme.Type.HTTP) // HTTP 방식의 보안
-                                                .scheme("bearer") // Bearer 토큰 사용
-                                                .bearerFormat("JWT") // JWT 형식
-                                                .description("JWT 토큰을 입력해주세요. (Bearer 접두사 없이)") // 사용자에게 표시될 설명
+                                                .type(SecurityScheme.Type.HTTP)
+                                                .scheme("bearer")
+                                                .bearerFormat("JWT")
+                                                .description("JWT 토큰을 입력해주세요. (Bearer 접두사 없이)")
                                 )
                 )
                 .info(new Info()
                         .title("RMAGO API 문서")
                         .version("1.0")
-                        .description("RMAGO 프로젝트의 API 문서입니다. JWT 인증을 통해 접근할 수 있습니다.")
+                        .description("RMAGO 프로젝트의 API 문서입니다. 인증 없이 접근 가능합니다.")
                 );
     }
 }
