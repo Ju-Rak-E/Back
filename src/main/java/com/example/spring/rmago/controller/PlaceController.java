@@ -3,6 +3,7 @@ package com.example.spring.rmago.controller;
 import com.example.spring.rmago.dto.RadiusAreaRequestDto;
 import com.example.spring.rmago.dto.PlaceDto;
 import com.example.spring.rmago.dto.Recommend.RecommendRequestDto;
+import com.example.spring.rmago.dto.Recommend.RecommendedPlaceDto;
 import com.example.spring.rmago.entity.Place;
 import com.example.spring.rmago.service.PlaceService;
 import lombok.RequiredArgsConstructor;
@@ -29,24 +30,22 @@ public class PlaceController {
     private final PlaceService placeService;
 
     @GetMapping("/area")
-    public ResponseEntity<List<Place>> getNearbyTourSpots(@RequestBody RecommendRequestDto request) {
+    public ResponseEntity<List<RecommendedPlaceDto>> getNearbyTourSpots(@RequestBody RecommendRequestDto request) {
         double lat = request.getLatitude();
         double lng = request.getLongitude();
         int radiusMeters = (int) (request.getRadius() * 1000); // km → m 변환
         String category = request.getCategory();
 
-        // Mono<List<Place>>를 block()으로 동기 처리
-        List<Place> places = placeService
-                .getPlacesByCoordinate(lat, lng, radiusMeters, category)
+        List<RecommendedPlaceDto> response = placeService
+                .getRecommendedPlaces(lat, lng, radiusMeters, category)
                 .block();
 
-        // 혹시 null이 반환될 경우를 대비
-        if (places == null) {
-            places = Collections.emptyList();
-        }
+        if (response == null) response = Collections.emptyList();
 
-        log.info("🎯 반환할 장소 개수: {}", places.size());
-        return ResponseEntity.ok(places);
+        log.info("🎯 반환할 장소 개수: {}", response.size());
+        return ResponseEntity.ok(response);
     }
+
+
 
 }

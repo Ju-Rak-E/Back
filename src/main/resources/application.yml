@@ -5,9 +5,9 @@ spring:
   application:
     name: RMaGo
   datasource:
-    url: jdbc:postgresql://localhost:5432/rmago
-    username: postgres
-    password: 0629
+    url: ${Data_URL}
+    username: ${Data_Username}
+    password: ${Data_Password}
 
 
   jpa:

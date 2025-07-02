@@ -1,6 +1,7 @@
 package com.example.spring.rmago.service;
 
 import com.example.spring.rmago.dto.PlaceDto;
+import com.example.spring.rmago.dto.Recommend.RecommendedPlaceDto;
 import com.example.spring.rmago.entity.Place;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -81,12 +82,12 @@ public class PlaceService {
     /**
      * 위도/경도, 반경, 카테고리로 장소 리스트 조회
      */
-    public Mono<List<Place>> getPlacesByCoordinate(double latitude, double longitude, int radiusMeters, String category) {
+    public Mono<List<RecommendedPlaceDto>> getRecommendedPlaces(double latitude, double longitude, int radiusMeters, String category) {
         int contentTypeId = resolveContentTypeId(category);
 
         return fetchLocationBasedTourList(latitude, longitude, radiusMeters, contentTypeId)
                 .map(dto -> {
-                    List<Place> result = new ArrayList<>();
+                    List<RecommendedPlaceDto> result = new ArrayList<>();
                     if (dto == null || dto.getResponse() == null || dto.getResponse().getBody() == null || dto.getResponse().getBody().getItems() == null) {
                         log.warn("❌ 응답 데이터의 Items 또는 상위 구조가 null입니다.");
                         return result;
@@ -103,25 +104,45 @@ public class PlaceService {
                     for (PlaceDto.ItemDto item : items) {
                         if (item.getMapx() == null || item.getMapy() == null) continue;
 
-                        Place place = new Place();
-                        place.setName(item.getTitle());
-                        place.setAddress(item.getAddr1());
-                        place.setLng(item.getMapx());
-                        place.setLat(item.getMapy());
-                        place.setCategory(category);
-                        result.add(place);
+                        double dist = calculateDistanceKm(latitude, longitude, item.getMapy(), item.getMapx());
+
+                        RecommendedPlaceDto dtoItem = RecommendedPlaceDto.builder()
+                                .name(item.getTitle())
+                                .category(category)
+                                .lat(item.getMapy()) // ✅ 위도
+                                .lng(item.getMapx()) // ✅ 경도
+                                .distanceKm(dist)
+                                .description("")
+                                .build();
+
+                        result.add(dtoItem);
                     }
                     return result;
                 });
     }
+
+
+    private double calculateDistanceKm(double lat1, double lng1, double lat2, double lng2) {
+        final int earthRadius = 6371;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return Math.round(earthRadius * c * 100.0) / 100.0;
+    }
+
+
+
 
     /**
      * 카테고리 문자열 → contentTypeId 변환
      */
     public int resolveContentTypeId(String category) {
         if (category == null || category.isBlank()) {
-            log.warn("⚠ category가 null 또는 비어있음 → 기본값 '관광지(12)' 사용");
-            return 12;
+            log.warn("⚠ category가 null 또는 비어있음 → 기본값 '관광지(39)' 사용");
+            return 25;
         }
 
         return switch (category.toLowerCase()) {
@@ -135,7 +156,7 @@ public class PlaceService {
             case "음식점" -> 39;
             default -> {
                 log.warn("⚠ 알 수 없는 category '{}', 기본값 '관광지(12)' 사용", category);
-                yield 12;
+                yield 39;
             }
         };
     }
