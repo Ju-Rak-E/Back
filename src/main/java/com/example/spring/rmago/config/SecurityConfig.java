@@ -41,10 +41,10 @@ public class SecurityConfig {
                                 "/health",
                                 "/login/**", "/oauth2/**",
                                 "/customer/login/kakao/android",
-                                "/customer/reissue"
+                                "/customer/reissue","/api/tour/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
-                        .requestMatchers("/api/taxi/estimate-radius","/api/tour/**","/recommend/**","/api/laas/**").authenticated() // ✅ 추가
+                        .requestMatchers("/api/taxi/estimate-radius","/recommend/**","/api/laas/**").authenticated() // ✅ 추가
                         .anyRequest().authenticated() // 기타 모든 경로 인증
                 )
                 .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
