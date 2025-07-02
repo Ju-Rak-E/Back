@@ -1,6 +1,7 @@
 package com.example.spring.rmago.config;
 
 import com.example.spring.rmago.properties.JwtProperties;
+import com.example.spring.rmago.security.JwtAuthenticationFilter;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -40,16 +41,15 @@ public class SecurityConfig {
                                 "/health",
                                 "/login/**", "/oauth2/**",
                                 "/customer/login/kakao/android",
-                                "/customer/reissue","/api/tour/**"
-                        ).permitAll()
+                                "/customer/reissue","/api/tour/**","/api/taxi/estimate-radius","/recommend/**","/api/laas/**")
+                        .permitAll()
                         .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
-                        .requestMatchers("/api/taxi/estimate-radius","/recommend/**","/api/laas/**").authenticated() // ✅ 추가
                         .anyRequest().authenticated() // 기타 모든 경로 인증
                 )
                 .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-    
+
     }
   
     @Bean
